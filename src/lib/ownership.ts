@@ -3,7 +3,7 @@ import { createId } from "@/lib/utils";
 export const OWNER_COOKIE_NAME = "pyth_oracle_gym_owner";
 export const OWNER_HEADER_NAME = "x-pyth-oracle-gym-owner";
 export const LEGACY_OWNER_ID = "__oracle_gym_legacy__";
-export const DEFAULT_OWNER_BALANCE = 0;
+export const DEFAULT_OWNER_BALANCE = 1000;
 export const DEFAULT_GYM_SEASON_ID = "season-1";
 
 const WALLET_OWNER_PATTERN = /^wallet:([^:]+):(0x[a-f0-9]{40})$/i;
