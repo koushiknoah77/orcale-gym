@@ -41,6 +41,11 @@ export default function HomePage() {
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
+    if (!isConnected) {
+      setStats(null);
+      return;
+    }
+
     fetch("/api/user-stats")
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { 
@@ -48,7 +53,7 @@ export default function HomePage() {
           setStats(d as UserStats);
           // Show welcome modal for new users who just connected
           // Only show once per session using sessionStorage
-          if (isConnected && (d as UserStats).isNewOwner) {
+          if ((d as UserStats).isNewOwner) {
             const welcomeShown = sessionStorage.getItem('oracle-gym-welcome-shown');
             if (!welcomeShown) {
               setShowWelcome(true);
@@ -67,7 +72,7 @@ export default function HomePage() {
   };
 
   const streak = stats?.streak ?? 0;
-  const balance = stats?.balance ?? null;
+  const balance = isConnected ? (stats?.balance ?? null) : null;
   const dailyBonus = stats?.dailyBonusAvailable ?? false;
   const streakMultiplier = stats?.streakMultiplier ?? 2;
 
@@ -95,7 +100,7 @@ export default function HomePage() {
           <motion.h1 initial="hidden" animate="visible" variants={fadeUp} custom={1}
             style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.04em", marginTop: "0.5rem", marginBottom: "1.5rem" }}
           >
-            Train Your Oracle{" "}<br />
+            Train Your Trading{" "}<br />
             <span className="gradient-text" style={{ fontWeight: 800 }}>Skills in the Arena</span>
           </motion.h1>
 
@@ -124,6 +129,7 @@ export default function HomePage() {
           {/* Streak callout */}
           <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={4}
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", marginTop: "2rem", flexWrap: "wrap" }}
+            suppressHydrationWarning
           >
             <Flame size={16} color="var(--amber)" />
             <span style={{ fontSize: "0.875rem", color: "var(--t3)" }}>Complete daily drills to build your streak</span>

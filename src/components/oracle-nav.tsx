@@ -31,10 +31,21 @@ export function OracleNav() {
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showStreakShop, setShowStreakShop] = useState(false);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const walletMenuRef = useRef<HTMLDivElement>(null);
 
-  // Fetch live user stats every 8 seconds
+  // Wait for client-side mount to avoid hydration mismatch
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Fetch live user stats every 8 seconds (only when connected)
+  useEffect(() => {
+    if (!mounted || !isConnected || !isBaseSepolia) {
+      setStats(null);
+      return;
+    }
+
     let ignore = false;
     async function fetchStats() {
       try {
@@ -52,7 +63,7 @@ export function OracleNav() {
     void fetchStats();
     const id = window.setInterval(() => void fetchStats(), 8000);
     return () => { ignore = true; window.clearInterval(id); };
-  }, []);
+  }, [mounted, isConnected, isBaseSepolia]);
 
   // Hide level-up banner after 3s
   useEffect(() => {
@@ -96,7 +107,8 @@ export function OracleNav() {
   const xpPct  = stats ? xpPctInLevel(stats.xp) : 0;
   const level  = stats?.level ?? 1;
   const streak = stats?.streak ?? 0;
-  const balance = stats?.balance ?? null;
+  // Only show balance when wallet is connected and on Base Sepolia
+  const balance = (isConnected === true && isBaseSepolia === true && stats?.balance !== undefined) ? stats.balance : null;
 
   return (
     <>
@@ -135,8 +147,9 @@ export function OracleNav() {
             </Link>
 
             {/* Streak - moved to left side */}
-            {isConnected && isBaseSepolia && (
+            {mounted && isConnected && isBaseSepolia && (
               <button
+                suppressHydrationWarning
                 onClick={() => setShowStreakShop(true)}
                 title={streak > 0 ? `${streak} day streak! ×${stats?.streakMultiplier || 2} coin multiplier. Click to boost.` : "Click to purchase streak boost"}
                 style={{
@@ -183,8 +196,8 @@ export function OracleNav() {
           {/* Right side: Coins + XP + Wallet */}
           <div className="nav-right">
             {/* Coins - only show when wallet is connected */}
-            {balance !== null && isConnected && isBaseSepolia && (
-              <div style={{
+            {mounted && balance !== null && isConnected && isBaseSepolia && (
+              <div suppressHydrationWarning style={{
                 display: "flex", alignItems: "center", gap: "0.375rem",
                 padding: "0.375rem 0.75rem",
                 borderRadius: "var(--r-full)",
@@ -196,14 +209,16 @@ export function OracleNav() {
               </div>
             )}
 
-            {/* XP Bar */}
-            <div className="xp-bar-wrap">
-              <div className="level-badge">{level}</div>
-              <div className="xp-bar-track">
-                <div className="xp-bar-fill" style={{ width: `${xpPct}%` }} />
+            {/* XP Bar - only show when wallet connected */}
+            {mounted && isConnected && isBaseSepolia && (
+              <div className="xp-bar-wrap" suppressHydrationWarning>
+                <div className="level-badge">{level}</div>
+                <div className="xp-bar-track">
+                  <div className="xp-bar-fill" style={{ width: `${xpPct}%` }} />
+                </div>
+                <span className="xp-label">{Math.round(xpPct)}%</span>
               </div>
-              <span className="xp-label">{Math.round(xpPct)}%</span>
-            </div>
+            )}
 
             {/* Wallet */}
             <div style={{ position: "relative" }} ref={walletMenuRef}>
@@ -219,9 +234,20 @@ export function OracleNav() {
                 disabled={disabled}
                 className="btn btn-primary btn-sm"
                 style={{ opacity: disabled ? 0.6 : 1, fontSize: "0.75rem", padding: "0.4rem 0.875rem" }}
+                suppressHydrationWarning
               >
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: dotColor, boxShadow: `0 0 6px ${dotColor}`, flexShrink: 0 }} />
-                {walletLabel}
+                <span 
+                  style={{ 
+                    width: 7, 
+                    height: 7, 
+                    borderRadius: "50%", 
+                    background: dotColor, 
+                    boxShadow: `0 0 6px ${dotColor}`, 
+                    flexShrink: 0 
+                  }}
+                  suppressHydrationWarning
+                />
+                <span suppressHydrationWarning>{walletLabel}</span>
               </button>
 
               {/* Wallet dropdown menu */}
